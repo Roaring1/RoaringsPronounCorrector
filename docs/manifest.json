@@ -1,0 +1,197 @@
+{
+    "name": "PronounCorrector",
+    "version": "2.0.0",
+    "description": "Advanced pronoun correction plugin with context awareness, multiple data sources, and comprehensive settings",
+    "main": "index.ts",
+    "author": {
+        "name": "Your Name",
+        "discord": "your_discord_tag",
+        "github": "your_github"
+    },
+    "license": "MIT",
+    "vencord": {
+        "minVersion": "1.7.0",
+        "dependencies": [],
+        "patches": [],
+        "settings": {
+            "enabled": {
+                "type": "boolean",
+                "description": "Enable pronoun correction",
+                "default": true
+            },
+            "correctionTone": {
+                "type": "select",
+                "description": "Tone for correction messages",
+                "options": {
+                    "gentle": "Gentle",
+                    "neutral": "Neutral", 
+                    "educational": "Educational",
+                    "custom": "Custom"
+                },
+                "default": "gentle"
+            },
+            "customMessage": {
+                "type": "string",
+                "description": "Custom correction message template",
+                "default": "Just a heads up: {user} uses {pronouns} pronouns! 💙",
+                "placeholder": "Use {user} for mention, {pronouns} for correct pronouns"
+            },
+            "pronounSources": {
+                "type": "multiselect",
+                "description": "Pronoun data sources to check",
+                "options": {
+                    "pronoundb": "PronounDB",
+                    "discord_bio": "Discord Bio",
+                    "custom": "Custom API"
+                },
+                "default": ["pronoundb"]
+            },
+            "customApiUrl": {
+                "type": "string",
+                "description": "Custom pronoun API URL",
+                "default": "",
+                "placeholder": "https://api.example.com/pronouns/{userId}"
+            },
+            "cooldownMinutes": {
+                "type": "slider",
+                "description": "Minutes between corrections for same user in same channel",
+                "min": 5,
+                "max": 120,
+                "step": 5,
+                "default": 30,
+                "unit": "minutes"
+            },
+            "maxCorrectionsPerUser": {
+                "type": "slider", 
+                "description": "Maximum corrections per user per day",
+                "min": 1,
+                "max": 10,
+                "step": 1,
+                "default": 3,
+                "unit": "corrections"
+            },
+            "contextAwareness": {
+                "type": "boolean",
+                "description": "Enable advanced context awareness to reduce false positives",
+                "default": true
+            },
+            "skipQuotes": {
+                "type": "boolean",
+                "description": "Skip corrections in quoted text and code blocks",
+                "default": true
+            },
+            "skipBots": {
+                "type": "boolean",
+                "description": "Skip corrections for bot users",
+                "default": true
+            },
+            "requireConfidence": {
+                "type": "slider",
+                "description": "Minimum confidence level for corrections",
+                "min": 50,
+                "max": 95,
+                "step": 5,
+                "default": 75,
+                "unit": "%"
+            },
+            "debugMode": {
+                "type": "boolean",
+                "description": "Enable debug logging",
+                "default": false
+            }
+        },
+        "commands": [
+            {
+                "name": "pc-stats",
+                "description": "Show pronoun correction statistics",
+                "options": [
+                    {
+                        "name": "user",
+                        "description": "Show stats for specific user",
+                        "type": "user",
+                        "required": false
+                    },
+                    {
+                        "name": "channel",
+                        "description": "Show stats for specific channel",
+                        "type": "channel",
+                        "required": false
+                    }
+                ]
+            },
+            {
+                "name": "pc-clear",
+                "description": "Clear correction history",
+                "options": [
+                    {
+                        "name": "target",
+                        "description": "What to clear",
+                        "type": "string",
+                        "choices": [
+                            { "name": "All", "value": "all" },
+                            { "name": "User", "value": "user" },
+                            { "name": "Channel", "value": "channel" }
+                        ],
+                        "required": true
+                    },
+                    {
+                        "name": "id",
+                        "description": "User or channel ID to clear",
+                        "type": "string",
+                        "required": false
+                    }
+                ]
+            },
+            {
+                "name": "pc-test",
+                "description": "Test pronoun detection on a message",
+                "options": [
+                    {
+                        "name": "message",
+                        "description": "Message to test",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "user",
+                        "description": "User to test against",
+                        "type": "user",
+                        "required": false
+                    }
+                ]
+            }
+        ]
+    },
+    "keywords": [
+        "pronouns",
+        "accessibility", 
+        "inclusion",
+        "lgbtq",
+        "correction",
+        "respect"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/your-username/vencord-pronoun-corrector"
+    },
+    "bugs": {
+        "url": "https://github.com/your-username/vencord-pronoun-corrector/issues"
+    },
+    "changelog": {
+        "2.0.0": [
+            "Complete rewrite with advanced context awareness",
+            "Multiple pronoun data sources support",
+            "Comprehensive settings system",
+            "Duplicate correction prevention",
+            "Advanced confidence scoring",
+            "Better language parsing and false positive reduction",
+            "Statistics tracking and management commands",
+            "Improved performance and caching"
+        ],
+        "1.0.0": [
+            "Initial release",
+            "Basic pronoun correction functionality",
+            "PronounDB integration"
+        ]
+    }
+}

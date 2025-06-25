@@ -1,0 +1,32 @@
+{
+  "name": "roarings-pronoun-corrector",
+  "version": "2.0.0",
+  "description": "Advanced Discord pronoun correction plugin for Vencord with context awareness",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "echo 'Use Vencord build system'",
+    "test": "echo 'No tests yet'"
+  },
+  "keywords": [
+    "discord",
+    "vencord", 
+    "plugin",
+    "pronouns",
+    "accessibility",
+    "lgbtq",
+    "inclusion"
+  ],
+  "author": {
+    "name": "Roaring",
+    "url": "https://github.com/Roaring1"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Roaring1/RoaringsPronounCorrector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Roaring1/RoaringsPronounCorrector/issues"
+  },
+  "homepage": "https://github.com/Roaring1/RoaringsPronounCorrector#readme"
+}
