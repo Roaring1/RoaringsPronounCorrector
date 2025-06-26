@@ -1,8 +1,7 @@
 import definePlugin, { OptionType } from "@utils/types";
-import { addPreSendListener, removePreSendListener, MessageObject } from "@api/MessageEvents";
-import { findByPropsLazy } from "@webpack";
-import { UserStore, ChannelStore } from "@webpack/common";
-import { Toasts, showToast } from "@webpack/common";
+import { addPreSendListener, removePreSendListener } from "@api/MessageEvents";
+import { UserStore, ChannelStore, Toasts } from "@webpack/common";
+import { showToast } from "@webpack/common";
 import { 
     fetchPronouns, 
     detectPronounMismatches, 
@@ -11,8 +10,6 @@ import {
     PronounSource,
     CorrectionMode 
 } from "./pronounAutoCorrect";
-
-const MessageActions = findByPropsLazy("sendMessage", "editMessage");
 
 export default definePlugin({
     name: "RoaringsPronounAutoCorrect",
@@ -78,7 +75,7 @@ export default definePlugin({
         }
     },
 
-    // Track my correction statistics
+    // My personal statistics
     stats: {
         totalCorrections: 0,
         autoCorrections: 0,
@@ -91,7 +88,7 @@ export default definePlugin({
     start() {
         console.log("[RoaringsPronounAutoCorrect] Starting my pronoun auto-correction...");
         
-        // Add my pre-send message listener
+        // Set up my message interceptor
         this.preSendListener = addPreSendListener(async (channelId, messageObj, extra) => {
             return await this.interceptMyMessage(channelId, messageObj, extra);
         });
@@ -114,7 +111,7 @@ export default definePlugin({
         }
     },
 
-    async interceptMyMessage(channelId: string, messageObj: MessageObject, extra: any) {
+    async interceptMyMessage(channelId: string, messageObj: any, extra: any) {
         // Only process if I have the feature enabled
         if (!this.options.enabled) return;
 
@@ -220,7 +217,7 @@ export default definePlugin({
         return corrections;
     },
 
-    async handleCorrections(messageObj: MessageObject, corrections: any[], channelId: string) {
+    async handleCorrections(messageObj: any, corrections: any[], channelId: string) {
         const mode = this.options.correctionMode;
 
         switch (mode) {
@@ -238,7 +235,7 @@ export default definePlugin({
         }
     },
 
-    async autoCorrectMessage(messageObj: MessageObject, corrections: any[]) {
+    async autoCorrectMessage(messageObj: any, corrections: any[]) {
         let correctedContent = messageObj.content;
         const correctedWords = [];
 
@@ -275,7 +272,7 @@ export default definePlugin({
         return;
     },
 
-    async blockMessageAndWarn(messageObj: MessageObject, corrections: any[], channelId: string) {
+    async blockMessageAndWarn(messageObj: any, corrections: any[], channelId: string) {
         // Prevent my message from sending
         const correctionSummary = corrections.map(c => {
             const user = UserStore.getUser(c.userId);
@@ -306,7 +303,7 @@ export default definePlugin({
         return false;
     },
 
-    async askBeforeCorrection(messageObj: MessageObject, corrections: any[]) {
+    async askBeforeCorrection(messageObj: any, corrections: any[]) {
         // For now, we'll auto-correct but show a detailed notification
         // In a full implementation, this would show a modal dialog
         
@@ -324,29 +321,5 @@ export default definePlugin({
 
         // Apply corrections after showing the warning
         return await this.autoCorrectMessage(messageObj, corrections);
-    },
-
-    // Command to show my statistics
-    getMyStats() {
-        const uptime = Date.now() - this.stats.sessionStarted;
-        const hours = Math.floor(uptime / (1000 * 60 * 60));
-        
-        return {
-            ...this.stats,
-            uptimeHours: hours,
-            settingsActive: this.options.enabled
-        };
-    },
-
-    // Reset my statistics
-    resetMyStats() {
-        this.stats = {
-            totalCorrections: 0,
-            autoCorrections: 0,
-            blockedMessages: 0,
-            sessionStarted: Date.now()
-        };
-        
-        showToast("My pronoun correction stats have been reset!", Toasts.Type.SUCCESS);
     }
 });
