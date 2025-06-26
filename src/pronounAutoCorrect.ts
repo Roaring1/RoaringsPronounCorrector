@@ -223,6 +223,26 @@ export function detectPronounMismatches(
         return mismatches;
     }
 
+    // Check if this is a DM context (no mentions in content)
+    const hasMentions = /<@!?\d+>/.test(content);
+    
+    if (hasMentions) {
+        // Original mention-based detection
+        return detectMismatches_WithMentions(processedContent, userId, correctSet, options);
+    } else {
+        // DM context - check all pronouns in the message
+        return detectMismatches_DMContext(processedContent, correctSet, options);
+    }
+}
+
+function detectMismatches_WithMentions(
+    processedContent: string,
+    userId: string, 
+    correctSet: any,
+    options: DetectionOptions
+): PronounMismatch[] {
+    const mismatches: PronounMismatch[] = [];
+    
     // Find where I mentioned this user
     const mentionPattern = new RegExp(`<@!?${userId}>`, 'g');
     const mentionMatches = Array.from(processedContent.matchAll(mentionPattern));
@@ -280,6 +300,68 @@ export function detectPronounMismatches(
                         confidence: Math.round(confidence)
                     });
                 }
+            }
+        }
+    }
+
+    return mismatches;
+}
+
+function detectMismatches_DMContext(
+    processedContent: string,
+    correctSet: any,
+    options: DetectionOptions
+): PronounMismatch[] {
+    const mismatches: PronounMismatch[] = [];
+    
+    // In DMs, check ALL pronouns in the message since they likely refer to the recipient
+    for (const [type, correctOptions] of Object.entries(correctSet)) {
+        // Build pattern for all pronouns of this type from other sets
+        const allPronounsOfType = Object.values(PRONOUN_SETS)
+            .flatMap(set => set[type as keyof typeof set] || [])
+            .filter(p => !correctOptions.includes(p.toLowerCase()));
+
+        if (allPronounsOfType.length === 0) continue;
+
+        const wrongPronounPattern = new RegExp(
+            `\\b(${allPronounsOfType.join('|')})\\b`,
+            'gi'
+        );
+
+        let match;
+        while ((match = wrongPronounPattern.exec(processedContent)) !== null) {
+            const wrongPronoun = match[0].toLowerCase();
+            const position = match.index!;
+            
+            // Higher base confidence in DMs since pronouns likely refer to the recipient
+            let confidence = 85;
+
+            // Get surrounding context
+            const contextStart = Math.max(0, position - 20);
+            const contextEnd = Math.min(processedContent.length, position + match[0].length + 20);
+            const surroundingText = processedContent.slice(contextStart, contextEnd);
+
+            // Increase confidence if it's clearly referential
+            if (/\b(is|was|will|can|should|would|has|had|goes|went|says|said|you|your)\b/i.test(surroundingText)) {
+                confidence += 10;
+            }
+
+            // Decrease confidence if it might be about someone else
+            if (/\b(friend|person|someone|they|people|folks|everyone|everyone|anybody)\b/i.test(surroundingText)) {
+                confidence -= 20;
+            }
+
+            if (confidence >= (options.confidenceThreshold || 70)) {
+                // Find the best correction for this wrong pronoun
+                const correctPronoun = findBestCorrection(wrongPronoun, correctSet);
+                
+                mismatches.push({
+                    wrongPronoun,
+                    correctPronoun,
+                    position,
+                    context: surroundingText,
+                    confidence: Math.round(confidence)
+                });
             }
         }
     }

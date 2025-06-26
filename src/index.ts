@@ -127,12 +127,12 @@ export default definePlugin({
                 console.log("[RoaringsPronounAutoCorrect] Checking my message:", content);
             }
 
-            // Look for mentions in my message
-            const mentions = extractMentions(content);
-            if (mentions.length === 0) return; // No mentions, nothing to check
+            // Get users to check (mentions OR DM recipient)
+            const usersToCheck = await this.getUsersToCheck(channelId, content);
+            if (usersToCheck.length === 0) return; // Nobody to check
 
-            // Check each mentioned user for pronoun mismatches
-            const corrections = await this.checkForPronounMismatches(content, mentions);
+            // Check each user for pronoun mismatches
+            const corrections = await this.checkForPronounMismatches(content, usersToCheck);
             
             if (corrections.length === 0) return; // No issues found
 
@@ -148,10 +148,44 @@ export default definePlugin({
         }
     },
 
-    async checkForPronounMismatches(content: string, mentions: string[]) {
+    async getUsersToCheck(channelId: string, content: string): Promise<string[]> {
+        const channel = ChannelStore.getChannel(channelId);
+        if (!channel) return [];
+
+        // Check if this is a DM
+        if (channel.type === 1) { // DM channel type
+            // In DMs, if I use pronouns, I'm probably talking about the other person
+            const hasPronouns = this.containsPronouns(content);
+            if (hasPronouns) {
+                // Get the other person in the DM (not me)
+                const myId = UserStore.getCurrentUser()?.id;
+                const recipientId = channel.recipients?.find((id: string) => id !== myId);
+                
+                if (recipientId) {
+                    if (this.options.debugMode) {
+                        console.log("[RoaringsPronounAutoCorrect] DM detected - checking pronouns for recipient:", recipientId);
+                    }
+                    return [recipientId];
+                }
+            }
+            return [];
+        }
+
+        // For non-DMs, look for @mentions like before
+        const mentions = extractMentions(content);
+        return mentions;
+    },
+
+    containsPronouns(content: string): boolean {
+        // Check if the message contains any pronouns that could refer to someone
+        const pronounPattern = /\b(he|she|they|him|her|them|his|hers|their|himself|herself|themselves|themself)\b/i;
+        return pronounPattern.test(content);
+    },
+
+    async checkForPronounMismatches(content: string, usersToCheck: string[]) {
         const corrections = [];
 
-        for (const userId of mentions) {
+        for (const userId of usersToCheck) {
             try {
                 // Get the user's correct pronouns
                 const userPronouns = await fetchPronouns(userId, {
